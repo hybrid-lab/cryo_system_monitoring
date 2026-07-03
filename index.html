@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2D MOT Pressure Monitor</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>2D MOT Pressure Monitor</h1>
+  <div class="subtext">SuleymanzadeLab &mdash; Cryo System &mdash; CM.52 IONIVAC channel</div>
+  <div id="status-banner"></div>
+</header>
+<main>
+  <section class="readout">
+    <div id="latest-value" class="big-number">-- mbar</div>
+    <div id="latest-time" class="subtext">loading...</div>
+  </section>
+  <section class="chart-container">
+    <canvas id="pressure-chart"></canvas>
+  </section>
+  <p class="subtext footnote">
+    Data is pushed from the lab PC roughly every 2 minutes and downsampled to 1-minute
+    averages over the last 7 days. This page re-fetches the data every 60s.
+  </p>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
