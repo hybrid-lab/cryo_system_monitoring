@@ -1,7 +1,14 @@
 const ctx = document.getElementById('pressure-chart').getContext('2d');
 
 function fmtTime(ts) {
-  return new Date(ts * 1000).toLocaleString();
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString();
+}
+
+function fmtAxisLabel(ts) {
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' +
+    d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
 const chart = new Chart(ctx, {
@@ -18,12 +25,14 @@ const chart = new Chart(ctx, {
     }],
   },
   options: {
+    responsive: true,
+    maintainAspectRatio: false,
     animation: false,
     scales: {
       x: {
         type: 'linear',
         title: { display: true, text: 'Time' },
-        ticks: { callback: (v) => new Date(v * 1000).toLocaleString() },
+        ticks: { callback: (v) => fmtAxisLabel(v) },
       },
       y: {
         type: 'logarithmic',
@@ -34,6 +43,31 @@ const chart = new Chart(ctx, {
   },
 });
 
+let lastPayload = null;
+
+function renderChart() {
+  if (!lastPayload) return;
+  const chKey = Object.keys(lastPayload.channels)[0];
+  const chData = lastPayload.channels[chKey];
+  const minutes = Number(document.getElementById('range-select').value);
+  const cutoff = lastPayload.generated_at - minutes * 60;
+
+  // The published snapshot only carries two resolutions: full-rate points for the
+  // last hour ("recent"), and 1-minute averages for the last 7 days ("history").
+  // For ranges beyond an hour we have no choice but to fall back to the averaged
+  // series, since raw points that far back were never published.
+  const points = minutes <= 60
+    ? chData.recent
+        .filter((row) => row[2] === 0 && row[1] !== null && row[1] !== undefined && row[0] >= cutoff)
+        .map((row) => ({ x: row[0], y: row[1] }))
+    : chData.history
+        .filter((row) => row[1] !== null && row[1] !== undefined && row[0] >= cutoff)
+        .map((row) => ({ x: row[0], y: row[1] }));
+
+  chart.data.datasets[0].data = points;
+  chart.update('none');
+}
+
 async function refresh() {
   const banner = document.getElementById('status-banner');
   const valueEl = document.getElementById('latest-value');
@@ -41,15 +75,11 @@ async function refresh() {
   try {
     const res = await fetch('data/latest.json?_=' + Date.now());
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const payload = await res.json();
-    const chKey = Object.keys(payload.channels)[0];
-    const chData = payload.channels[chKey];
+    lastPayload = await res.json();
+    const chKey = Object.keys(lastPayload.channels)[0];
+    const chData = lastPayload.channels[chKey];
 
-    const points = chData.history
-      .map(([ts, avg]) => ({ x: ts, y: avg }))
-      .filter((p) => p.y !== null && p.y !== undefined);
-    chart.data.datasets[0].data = points;
-    chart.update('none');
+    renderChart();
 
     const latest = chData.latest;
     if (latest && latest.status === 0 && latest.pressure_mbar !== null) {
@@ -72,5 +102,6 @@ async function refresh() {
   }
 }
 
+document.getElementById('range-select').addEventListener('change', renderChart);
 refresh();
 setInterval(refresh, 60000);
