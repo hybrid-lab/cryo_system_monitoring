@@ -1,1 +1,1 @@
-{"generated_at": 1788175907.3099875, "channels": {"3": {"name": "IONIVAC", "latest": {"ts": 1785199764.6080801, "channel": 3, "status": 0, "pressure_mbar": 1.82e-06, "raw": "0,\t1.8200E-06"}, "recent": [], "history": []}}}
+{"generated_at": 1788176031.239349, "channels": {"3": {"name": "IONIVAC", "latest": {"ts": 1785199764.6080801, "channel": 3, "status": 0, "pressure_mbar": 1.82e-06, "raw": "0,\t1.8200E-06"}, "recent": [], "history": []}}}
